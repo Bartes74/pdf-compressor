@@ -16,6 +16,21 @@ jobs:
         with:
           submodules: true
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'pdf-compressor-pwa/package-lock.json'
+
+      - name: Install dependencies
+        working-directory: pdf-compressor-pwa
+        run: npm ci --no-audit --no-fund
+
+      - name: Build PWA (dist)
+        working-directory: pdf-compressor-pwa
+        run: npm run build
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -28,12 +43,13 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push (multi-arch)
+      - name: Build and push (multi-arch, runtime_local)
         uses: docker/build-push-action@v6
         with:
           context: ./pdf-compressor-pwa
           file: ./pdf-compressor-pwa/Dockerfile
           push: true
+          target: runtime_local
           platforms: linux/amd64,linux/arm64
           tags: dunczyk/pdfcompressor:latest
           cache-from: type=registry,ref=dunczyk/pdfcompressor:buildcache
